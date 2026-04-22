@@ -1,0 +1,10 @@
+checkpoints/
+eval_outputs/
+saved_videos/
+outputs/
+work_dirs/
+*__pycache__*
+.vscode/
+.idea/
+cotracker.egg-info/
+*.log

@@ -47,7 +47,7 @@ class EvaluationPredictor(torch.nn.Module):
         self.local_extent = local_extent
         self.model.eval()
 
-    def forward(self, video, queries):
+    def forward(self, video, queries, return_conf=False):
         queries = queries.clone()
         B, T, C, H, W = video.shape
         B, N, D = queries.shape
@@ -138,6 +138,10 @@ class EvaluationPredictor(torch.nn.Module):
 
         traj_e[:, :, :, 0] *= (W - 1) / float(interp_shape[1] - 1)
         traj_e[:, :, :, 1] *= (H - 1) / float(interp_shape[0] - 1)
+
+        if return_conf:
+            return traj_e, vis_e, conf_e
+
         if conf_e is not None:
             vis_e = vis_e * conf_e
 

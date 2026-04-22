@@ -1,0 +1,3 @@
+offline_model: True
+window_len: 60
+checkpoint: ./checkpoints/scaled_offline.pth

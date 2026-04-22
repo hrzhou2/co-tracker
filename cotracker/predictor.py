@@ -235,6 +235,7 @@ class CoTrackerOnlinePredictor(torch.nn.Module):
         grid_size: int = 5,
         grid_query_frame: int = 0,
         add_support_grid=False,
+        return_conf=False,
     ):
         B, T, C, H, W = video_chunk.shape
         # Initialize online video processing and save queried points
@@ -293,7 +294,16 @@ class CoTrackerOnlinePredictor(torch.nn.Module):
             visibilities = visibilities[:,:,:self.N]
             if not self.v2:
                 confidence = confidence[:,:,:self.N]
-            
+
+        if return_conf:
+            return (
+                tracks * tracks.new_tensor(
+                    [(W - 1) / (self.interp_shape[1] - 1), (H - 1) / (self.interp_shape[0] - 1)]
+                ),
+                visibilities,
+                confidence,
+            )
+
         if not self.v2:
             visibilities = visibilities * confidence
         thr = 0.6

@@ -96,6 +96,7 @@ class Visualizer:
         step: int = 0,
         query_frame=0,
         save_video: bool = True,
+        save_frames: bool = False,
         compensate_for_camera_motion: bool = False,
         opacity: float = 1.0,
     ):
@@ -130,10 +131,10 @@ class Visualizer:
             color_alpha=color_alpha,
         )
         if save_video:
-            self.save_video(res_video, filename=filename, writer=writer, step=step)
+            self.save_video(res_video, filename=filename, writer=writer, step=step, save_frames=save_frames)
         return res_video
 
-    def save_video(self, video, filename, writer=None, step=0):
+    def save_video(self, video, filename, writer=None, step=0, save_frames=False):
         if writer is not None:
             writer.add_video(
                 filename,
@@ -146,19 +147,25 @@ class Visualizer:
             wide_list = list(video.unbind(1))
             wide_list = [wide[0].permute(1, 2, 0).cpu().numpy() for wide in wide_list]
 
-            # Prepare the video file path
-            save_path = os.path.join(self.save_dir, f"{filename}.mp4")
+            if save_frames:
+                img_dir = os.path.join(self.save_dir, filename)
+                os.makedirs(img_dir, exist_ok=True)
+                for frame_id, frame in enumerate(wide_list):
+                    imageio.imsave(os.path.join(img_dir, f"{frame_id:04d}.jpg"), frame)
+            else:
+                # Prepare the video file path
+                save_path = os.path.join(self.save_dir, f"{filename}.mp4")
 
-            # Create a writer object
-            video_writer = imageio.get_writer(save_path, fps=self.fps)
+                # Create a writer object
+                video_writer = imageio.get_writer(save_path, fps=self.fps)
 
-            # Write frames to the video file
-            for frame in wide_list[2:-1]:
-                video_writer.append_data(frame)
+                # Write frames to the video file
+                for frame in wide_list[2:-1]:
+                    video_writer.append_data(frame)
 
-            video_writer.close()
+                video_writer.close()
 
-            print(f"Video saved to {save_path}")
+                print(f"Video saved to {save_path}")
 
     def draw_tracks_on_video(
         self,
@@ -246,6 +253,9 @@ class Visualizer:
                 curr_tracks = tracks[first_ind : t + 1]
                 curr_colors = vector_colors[first_ind : t + 1]
                 if compensate_for_camera_motion:
+                    # compute average track offsets for frames 0 ~ t
+                    # each offset is the average distance of background points from a previous frame to current frame
+                    # so the track points visualized on this frame are moved to a plausible position relative to the background
                     diff = (
                         tracks[first_ind : t + 1, segm_mask <= 0]
                         - tracks[t : t + 1, segm_mask <= 0]
